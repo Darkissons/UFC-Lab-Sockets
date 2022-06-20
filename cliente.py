@@ -1,13 +1,38 @@
 import socket
+import threading
 
-HOST = '127.0.0.1'
-PORT = 5000
+def init():
+    HOST = 'localhost'
+    PORT = 50000
 
-'''IPV4 = socket.AF_INET, TCP = socket.SOCK_STREAM'''
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-s.sendall(str.encode('Bom dia!'))
-data = s.recv(1024)
+    try:
+        server.connect((HOST, PORT))
+    except:
+        return print('Não foi possível se conectar ao servidor.')
 
-print('Mensagem recebida', data.decode())
+    username = input()
+
+    thread_1 = threading.Thread(target=receive, args=[server]).start()
+    thread_2 = threading.Thread(target=send, args=[server, username]).start()
+
+def receive(server):
+    while True:
+        try:
+            msg = server.recv(2048).decode('UTF-8')
+            print(msg+'\n')
+        except:
+            print('Conexão perdida!')
+            server.close()
+            break
+
+def send(server, username):
+    while True:
+        try:
+            msg = input()
+            server.send(f'<{username}> {msg}'.encode('UTF-8'))
+        except:
+            return
+
+init()

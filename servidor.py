@@ -1,22 +1,42 @@
 import socket
+import threading
 
-HOST = 'localhost'
-PORT = 5000
+clients = []
 
-'''IPV4 = socket.AF_INET, TCP = socket.SOCK_STREAM'''
+def init():
+    HOST = 'localhost'
+    PORT = 50000
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((HOST, PORT))
-s.listen()
-print('Aguardando conexão de um cliente')
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-conn, ender = s.accept()
+    try:
+        server.bind((HOST, PORT))
+        server.listen()
+        print('Servidor criado!')
+    except Exception as e:
+        return print('Não foi possível executar o servidor.', e)
 
-print('Conectado em', ender)
-while True:
-    data = conn.recv(1024)
-    if not data:
-        print('Fechando a conexão')
-        conn.close()
-        break
-    conn.sendall(data)
+    while True:
+        conn, ender = server.accept()
+        clients.append(conn)
+
+        thread_1 = threading.Thread(target=messages, args=[conn]).start()
+
+def messages(conn):
+    while True:
+        try:
+            msg = conn.recv(2048)
+            broadcast(msg, conn)
+        except:
+            clients.remove(conn)
+            break
+
+def broadcast(msg, conn):
+    for client in clients:
+        if client != conn:
+            try:
+                client.send(msg)
+            except:
+                clients.remove(client)
+
+init()
